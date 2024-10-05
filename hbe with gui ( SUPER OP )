@@ -1,0 +1,119 @@
+local HeadSize = 5.9
+local IsDisabled = true
+local IsTeamCheckEnabled = false 
+local HomingRadius = 10
+
+local function createGUI()
+    local gui = Instance.new("ScreenGui")
+    local mainFrame = Instance.new("Frame")
+    local sidebar = Instance.new("Frame")
+    local title = Instance.new("TextLabel")
+    local hitboxButton = Instance.new("TextButton")
+    local toggleIndicator = Instance.new("TextButton")
+    local uIListLayout = Instance.new("UIListLayout")
+
+    gui.Name = "HitboxGUI"
+    gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    mainFrame.Name = "MainFrame"
+    mainFrame.Parent = gui
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+    mainFrame.Size = UDim2.new(0, 400, 0, 300)
+
+    sidebar.Name = "Sidebar"
+    sidebar.Parent = mainFrame
+    sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    sidebar.Size = UDim2.new(0, 100, 1, 0)
+
+    title.Name = "Title"
+    title.Parent = sidebar
+    title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.Font = Enum.Font.SourceSansBold
+    title.Text = "Radeon.OP [+]"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextScaled = true
+    title.TextWrapped = true
+
+    uIListLayout.Parent = sidebar
+    uIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    hitboxButton.Name = "HitboxButton"
+    hitboxButton.Parent = sidebar
+    hitboxButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    hitboxButton.Size = UDim2.new(1, 0, 0, 50)
+    hitboxButton.Font = Enum.Font.SourceSansBold
+    hitboxButton.Text = "Hitbox"
+    hitboxButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    hitboxButton.TextScaled = true
+    hitboxButton.TextWrapped = true
+
+    toggleIndicator.Name = "ToggleIndicator"
+    toggleIndicator.Parent = sidebar
+    toggleIndicator.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    toggleIndicator.Size = UDim2.new(1, 0, 0, 50)
+    toggleIndicator.Font = Enum.Font.SourceSansBold
+    toggleIndicator.Text = "Toggle Hitbox"
+    toggleIndicator.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleIndicator.TextScaled = true
+    toggleIndicator.TextWrapped = true
+
+    local function toggleHitbox()
+        IsDisabled = not IsDisabled
+        if IsDisabled then
+            toggleIndicator.Text = "Disable Hitbox"
+        else
+            toggleIndicator.Text = "Enable Hitbox"
+        end
+    end
+
+    hitboxButton.MouseButton1Click:Connect(function()
+        toggleHitbox()
+    end)
+end
+
+game:GetService('RunService').RenderStepped:Connect(function()
+    if IsDisabled then
+        local localPlayer = game:GetService('Players').LocalPlayer
+        if not localPlayer then return end
+        
+        local localPlayerTeam = localPlayer.Team
+        local character = localPlayer.Character
+        local head = character and character:FindFirstChild("Head")
+
+        if not head then return end
+        
+        for _, player in ipairs(game:GetService('Players'):GetPlayers()) do
+            if player ~= localPlayer and (not IsTeamCheckEnabled or player.Team ~= localPlayerTeam) then
+                local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    humanoidRootPart.Size = Vector3.new(HeadSize, HeadSize, HeadSize)
+                    humanoidRootPart.Transparency = 1
+
+                    local rayOrigin = head.Position
+                    local rayDirection = (humanoidRootPart.Position - head.Position).Unit * 100
+                    local raycastParams = RaycastParams.new()
+                    raycastParams.FilterDescendantsInstances = {localPlayer.Character}
+                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+                    local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+
+                    if raycastResult and raycastResult.Instance then
+                        if not raycastResult.Instance:IsDescendantOf(player.Character) then
+                            local distanceToTarget = (humanoidRootPart.Position - raycastResult.Position).Magnitude
+                            if distanceToTarget <= HomingRadius then
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+createGUI()
+
+print("Script successfully executed!")
